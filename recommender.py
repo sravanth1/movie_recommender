@@ -33,9 +33,11 @@ pprint.pprint(distinct_directors)
 genre_feature_vectors={}
 
 for movie in data:
-	genre_feature_vectors[movie['title'].lower()]=[0]*len(distinct_genres)
+	genre_feature_vectors[movie['title'].lower()]=[0]*(len(distinct_genres)+2)#####first two indices are for imdb_rating and metascore
+	genre_feature_vectors[movie['title'].lower()][0]=float(movie['rating'])
+	genre_feature_vectors[movie['title'].lower()][1]=float(movie['metascore'])
 	for genre in movie['genre']:
-		genre_feature_vectors[movie['title'].lower()][distinct_genres.index(genre.lower())]=1
+		genre_feature_vectors[movie['title'].lower()][distinct_genres.index(genre.lower())+2]=1
 
 
 #############production od feature vectors where  keys are movie titles and values are 
