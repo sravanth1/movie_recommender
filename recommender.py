@@ -10,6 +10,22 @@ from operator import itemgetter
 with open("input.json") as main_file:
 	data=json.load(main_file)
 
+
+#######################finding median for metascore as some metscores are missing in data
+
+li=[]
+for movie in data:
+	if len(movie['metascore']) >0:
+		li.append(float(movie['metascore']))
+med_metascore= np.median(np.array(li))
+
+########################finding median of running time as the data is sparse in this ocation
+li=[]
+for movie in data:
+	if len(movie['running_time']) >0:
+		li.append(int(movie['running_time'].split(' ')[0]))
+med_running_time= np.median(np.array(li))
+
 ###########production of different genres############
 distinct_genres=[]
 for movie in data:
@@ -18,7 +34,7 @@ for movie in data:
 
 distinct_genres=sorted(list(set(distinct_genres)))
 
-pprint.pprint(len(distinct_genres))
+#pprint.pprint(len(distinct_genres))
 
 #######################production of different directors#############
 distinct_directors=[]
@@ -28,7 +44,7 @@ for movie in data:
 
 distinct_directors=sorted(list(set(distinct_directors)))
 
-pprint.pprint(distinct_directors)
+#$pprint.pprint(distinct_directors)
 
 ############################production of different actors####################
 distinct_stars=[]
@@ -50,10 +66,11 @@ for movie in data:
 	if len(movie['metascore']) > 0:
 		genre_feature_vectors[movie['title'].lower()][1]=float(movie['metascore'])
 	else:
-		genre_feature_vectors[movie['title'].lower()][1]=0
+		genre_feature_vectors[movie['title'].lower()][1]=med_metascore
 
 	for genre in movie['genre']:
 		genre_feature_vectors[movie['title'].lower()][distinct_genres.index(genre.lower())+2]=1
+	genre_feature_vectors[movie['title'].lower()]=np.array(genre_feature_vectors[movie['title'].lower()])
 
 
 #############production od feature vectors where  keys are movie titles and values are 
@@ -63,6 +80,7 @@ director_feature_vectors={}
 for movie in data:
 	director_feature_vectors[movie['title'].lower()]=[0]*len(distinct_directors)
 	director_feature_vectors[movie['title'].lower()][distinct_directors.index(movie['director'].lower())]=1
+	director_feature_vectors[movie['title'].lower()]=np.array(director_feature_vectors[movie['title'].lower()])
 
 #pprint.pprint(director_feature_vectors)
 
@@ -75,6 +93,7 @@ for movie in data:
 	actor_feature_vectors[movie['title'].lower()]=[0]*len(distinct_stars)
 	for star in movie['stars']:
 		actor_feature_vectors[movie['title'].lower()][distinct_stars.index(star.lower())]=1
+	actor_feature_vectors[movie['title'].lower()]=np.array(actor_feature_vectors[movie['title'].lower()])
 
 #pprint.pprint(actor_feature_vectors)
 
@@ -83,18 +102,43 @@ for movie in data:
 all_feature_vectors={}
 
 for key in genre_feature_vectors:
-	all_feature_vectors[key]=genre_feature_vectors[key]+director_feature_vectors[key]+actor_feature_vectors[key]
+	all_feature_vectors[key]=np.append(np.append(genre_feature_vectors[key],director_feature_vectors[key]),actor_feature_vectors[key])
 
-print(all_feature_vectors)
+#pprint.pprint(all_feature_vectors)
 
-test_movie=data[random.randint(0,len(data)-1)]
+######adding votes ,, release year and run length
+for movie in data:
+	np.append(all_feature_vectors[movie['title'].lower()],int(movie['votes'].replace(',', '')))
+	np.append(all_feature_vectors[movie['title'].lower()],float(movie['year']))
+	if len(movie['running_time']) > 0:
+		np.append(all_feature_vectors[movie['title'].lower()],int(movie['running_time'].split(' ')[0]))
+	else:
+		np.append(all_feature_vectors[movie['title'].lower()],med_running_time)
+
+###########################mean normalization
+all_features=[]
+for key in all_feature_vectors:
+	all_features.append(all_feature_vectors[key])
+
+all_features=np.array(all_features,dtype=np.float64)
+mean_X = np.array(all_features.mean(axis=0))
+stand_dev=np.array(all_features.std(axis=0))
+
+for key in all_feature_vectors:
+	all_feature_vectors[key]-=mean_X
+	all_feature_vectors[key]/=stand_dev
+
+
+
+###############testing 93
+test_movie=data[21]
 
 pprint.pprint(test_movie['title'])
 test_feature_vector=all_feature_vectors[test_movie['title'].lower()]
 
 results={}
 for key in all_feature_vectors:
-	results[key]=np.dot(np.array(test_feature_vector),np.array(all_feature_vectors[key]))/(np.linalg.norm(np.array(test_feature_vector))*np.linalg.norm(np.array(all_feature_vectors[key])))
+	results[key]=np.dot(test_feature_vector,all_feature_vectors[key])/(np.linalg.norm(test_feature_vector)*np.linalg.norm(all_feature_vectors[key]))
 
 od=collections.OrderedDict(sorted(results.items(),key=itemgetter(1)))
 print (type(od))
