@@ -6,6 +6,11 @@ import collections
 from operator import itemgetter
 #######for our convinience most of the times the data is changed to lowercase 
 
+
+def cosine_simulator(A,B):
+	return np.dot(A,B)/(np.linalg.norm(A)*np.linalg.norm(B))
+
+
 #####reading json file##################
 with open("input.json") as main_file:
 	data=json.load(main_file)
@@ -70,7 +75,7 @@ for movie in data:
 
 	for genre in movie['genre']:
 		genre_feature_vectors[movie['title'].lower()][distinct_genres.index(genre.lower())+2]=1
-	genre_feature_vectors[movie['title'].lower()]=np.array(genre_feature_vectors[movie['title'].lower()])
+	genre_feature_vectors[movie['title'].lower()]=np.array(genre_feature_vectors[movie['title'].lower()])#converting to numpy
 
 
 #############production od feature vectors where  keys are movie titles and values are 
@@ -80,7 +85,7 @@ director_feature_vectors={}
 for movie in data:
 	director_feature_vectors[movie['title'].lower()]=[0]*len(distinct_directors)
 	director_feature_vectors[movie['title'].lower()][distinct_directors.index(movie['director'].lower())]=1
-	director_feature_vectors[movie['title'].lower()]=np.array(director_feature_vectors[movie['title'].lower()])
+	director_feature_vectors[movie['title'].lower()]=np.array(director_feature_vectors[movie['title'].lower()])#converting to numpy
 
 #pprint.pprint(director_feature_vectors)
 
@@ -93,7 +98,7 @@ for movie in data:
 	actor_feature_vectors[movie['title'].lower()]=[0]*len(distinct_stars)
 	for star in movie['stars']:
 		actor_feature_vectors[movie['title'].lower()][distinct_stars.index(star.lower())]=1
-	actor_feature_vectors[movie['title'].lower()]=np.array(actor_feature_vectors[movie['title'].lower()])
+	actor_feature_vectors[movie['title'].lower()]=np.array(actor_feature_vectors[movie['title'].lower()])#converting to numpy
 
 #pprint.pprint(actor_feature_vectors)
 
@@ -121,8 +126,8 @@ for key in all_feature_vectors:
 	all_features.append(all_feature_vectors[key])
 
 all_features=np.array(all_features,dtype=np.float64)
-mean_X = np.array(all_features.mean(axis=0))
-stand_dev=np.array(all_features.std(axis=0))
+mean_X = np.array(all_features.mean(axis=0))#############finding mean
+stand_dev=np.array(all_features.std(axis=0))################finding standard deviation 
 
 for key in all_feature_vectors:
 	all_feature_vectors[key]-=mean_X
@@ -131,14 +136,14 @@ for key in all_feature_vectors:
 
 
 ###############testing 93
-test_movie=data[21]
+test_movie=data[0]
 
 pprint.pprint(test_movie['title'])
 test_feature_vector=all_feature_vectors[test_movie['title'].lower()]
 
 results={}
 for key in all_feature_vectors:
-	results[key]=np.dot(test_feature_vector,all_feature_vectors[key])/(np.linalg.norm(test_feature_vector)*np.linalg.norm(all_feature_vectors[key]))
+	results[key]=cosine_simulator(test_feature_vector,all_feature_vectors[key])
 
 od=collections.OrderedDict(sorted(results.items(),key=itemgetter(1)))
 print (type(od))
