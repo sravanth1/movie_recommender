@@ -67,7 +67,7 @@ for movie in data:
 	genre_feature_vectors[movie['title']]=[0]*(len(distinct_genres)+2)#####first two indices are for imdb_rating and metascore
 	genre_feature_vectors[movie['title']][0]=float(movie['rating'])
 
-	###########some of the metascores are not given...they are NULL so we have to predict it
+	###########some of the metascores are not given...they are NULL so we have to predict it(median)
 	if len(movie['metascore']) > 0:
 		genre_feature_vectors[movie['title']][1]=float(movie['metascore'])
 	else:
